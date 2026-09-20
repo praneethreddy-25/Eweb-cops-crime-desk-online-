@@ -1,0 +1,61 @@
+<?php
+require "connection.php";
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Complaint Status</title>
+</head>
+<body style="text-align:center;">
+
+<h2>Check Complaint Status</h2>
+
+<form method="POST">
+    Enter Case Number:
+    <input type="number" name="case_id" required>
+    <button type="submit" name="check">Check Status</button>
+</form>
+
+<?php
+
+if(isset($_POST['check'])){
+
+    $case_id = $_POST['case_id'];
+
+    $query = mysqli_query($conn, "SELECT * FROM registered_complaints WHERE id='$case_id'");
+
+    if(mysqli_num_rows($query) > 0){
+
+        $row = mysqli_fetch_assoc($query);
+
+        echo "<h3>Complaint Details</h3>";
+
+        echo "Name: ".$row['name']."<br>";
+        echo "Crime: ".$row['Incident']."<br>";
+        echo "Location: ".$row['Location']."<br>";
+
+        // STATUS LOGIC WITH COLORS
+$status = $row['Status'];
+
+if($status == 0){
+    echo "<h3 style='color:white; background:red; padding:10px; display:inline-block;'>Pending</h3>";
+}
+elseif($status == 1){
+    echo "<h3 style='color:white; background:orange; padding:10px; display:inline-block;'>In Progress</h3>";
+}
+elseif($status == 2){
+    echo "<h3 style='color:white; background:green; padding:10px; display:inline-block;'>Resolved</h3>";
+}
+else{
+    echo "<h3 style='color:white; background:blue; padding:10px; display:inline-block;'>Closed</h3>";
+}
+
+    } else{
+        echo "<h3 style='color:red;'>Invalid Case Number</h3>";
+    }
+}
+?>
+
+</body>
+</html>
