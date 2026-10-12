@@ -1,25 +1,62 @@
 <?php
-require 'connection.php';
-	echo "REGISTER HERE\t";
 
-function register($conn, $name, $occ, $email, $age, $mob, $adhr, $ad1, $ad2, $country, $city, $state, $zip, $other,$pass){
+require_once __DIR__ . '/connection.php';
 
-	$query=mysqli_query($conn, "INSERT INTO registered_users values('$name','$email', '$mob', '$ad1', '$country', '$occ', '$age', '$adhr', '$ad2', '$state', '$city', '$zip', '$other', '','$pass')");
-	if ($query) {
-		echo "REGISTERED";
-		header("Location:ECOPS2.php");
-	}else{
-		echo "REGISTERATION FAILED";
-	}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 
-}
+    $name    = trim($_POST['name'] ?? '');
+    $occ     = trim($_POST['occupation'] ?? '');
+    $email   = trim($_POST['email'] ?? '');
+    $age     = trim($_POST['age'] ?? '');
+    $mob     = trim($_POST['mobile'] ?? '');
+    $adhr    = trim($_POST['aadharNo'] ?? '');
+    $ad1     = trim($_POST['addr1'] ?? '');
+    $ad2     = trim($_POST['addr2'] ?? '');
+    $country = trim($_POST['country'] ?? '');
+    $city    = trim($_POST['city'] ?? '');
+    $state   = trim($_POST['state'] ?? '');
+    $zip     = trim($_POST['pin'] ?? '');
+    $other   = trim($_POST['other'] ?? '');
+    $emptyValue = '';
+    $pass    = $_POST['pass'] ?? '';
 
-$rand=(rand(1,9999));
-echo $rand."<br>";
+    $sql = "INSERT INTO registered_users
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-if(isset($_POST['submit'])){
-	register($conn, $_POST['name'], $_POST['occupation'], $_POST['email'], $_POST['age'], $_POST['mobile'], $_POST['aadharNo'], $_POST['addr1'], $_POST['addr2'], $_POST['country'], $_POST['city'], $_POST['state'], $_POST['pin'], $_POST['other'],$_POST['pass']);
-	
+    try {
+        $stmt = $conn->prepare($sql);
+
+        $stmt->bind_param(
+            "sssssssssssssss",
+            $name,
+            $email,
+            $mob,
+            $ad1,
+            $country,
+            $occ,
+            $age,
+            $adhr,
+            $ad2,
+            $state,
+            $city,
+            $zip,
+            $other,
+            $emptyValue,
+            $pass
+        );
+
+        $stmt->execute();
+        $stmt->close();
+
+        header('Location: ECOPS2.php');
+        exit;
+
+    } catch (mysqli_sql_exception $e) {
+        error_log('ECOPS registration failed: ' . $e->getMessage());
+
+        http_response_code(500);
+        echo 'Registration failed. Please try again.';
+    }
 }
 ?>
 <!DOCTYPE html>

@@ -11,24 +11,43 @@ if ($_SESSION['session']==TRUE) {
 ?>
 <?php
 
-require 'connection.php';
-	
-function register($conn, $name,  $email, $country, $msg){
+require_once __DIR__ . '/connection.php';
 
-	$query=mysqli_query($conn, "INSERT INTO contact values( '$name',  '$email', '$country', '$msg')");
-	if ($query) {
-		echo "";
-	}else{
-		echo "Feedback FAILED";
-	}
+session_start();
 
-}
+$sessionname = !empty($_SESSION['session'])
+    ? ($_SESSION['name'] ?? '')
+    : 'Please login';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Submit'])) {
 
+    $name    = trim($_POST['name'] ?? '');
+    $email   = trim($_POST['email'] ?? '');
+    $country = trim($_POST['country'] ?? '');
+    $msg     = trim($_POST['message'] ?? '');
 
-if(isset($_POST['Submit'])){
-	register($conn, $_POST['name'],  $_POST['email'], $_POST['country'],  $_POST['message']);
-	
+    $sql = "INSERT INTO contact VALUES (?, ?, ?, ?)";
+
+    try {
+        $stmt = $conn->prepare($sql);
+
+        $stmt->bind_param(
+            "ssss",
+            $name,
+            $email,
+            $country,
+            $msg
+        );
+
+        $stmt->execute();
+        $stmt->close();
+
+    } catch (mysqli_sql_exception $e) {
+        error_log('ECOPS contact form failed: ' . $e->getMessage());
+
+        http_response_code(500);
+        echo 'Feedback submission failed. Please try again.';
+    }
 }
 ?>
 
