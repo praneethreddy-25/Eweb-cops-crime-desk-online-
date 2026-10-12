@@ -1,39 +1,96 @@
 <?php
-require 'connection.php';
+require_once __DIR__ . '/connection.php';
 
-function register($conn, $name, $occ, $email, $age, $mob, $adhr, $ad1, $country, $city, $state, $pin, $Incident, $Person, $People, $Location, $Date, $Nearest){
-	$rand=rand(0,3);
-	$date=date("Y-m-d");
-	$query=mysqli_query($conn, "INSERT INTO registered_complaints values('$name','$email', '$mob', '$ad1', '$country', '$occ', '$age', '$adhr','$state', '$city', '$pin', '','$rand','$People','$Nearest', '$People', '$Incident', '$date','$Location')");
-	if ($query) {
+function register(
+    $conn,
+    $name, $occ, $email, $age, $mob, $adhr, $ad1,
+    $country, $city, $state, $pin, $Incident, $Person,
+    $People, $Location, $Date, $Nearest
+) {
+    $rand = rand(0, 3);
+    $date = date("Y-m-d");
 
-    // GET AUTO GENERATED CASE ID
-    $case_id = mysqli_insert_id($conn);
+    // Preserve the existing database value order for this security update.
+    $emptyValue = '';
 
-    echo "<h2 style='color:green; text-align:center;'>
-            Complaint Registered Successfully!
-          </h2>";
+    $sql = "INSERT INTO registered_complaints
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    echo "<h2 style='color:blue; text-align:center;'>
-            Your Case Number is: <b>$case_id</b>
-          </h2>";
+    try {
+        $stmt = $conn->prepare($sql);
 
-    echo "<h3 style='text-align:center;'>
-            Please save this Case Number to track your complaint.
-          </h3>";
+        $stmt->bind_param(
+            "ssssssssssssissssss",
+            $name,
+            $email,
+            $mob,
+            $ad1,
+            $country,
+            $occ,
+            $age,
+            $adhr,
+            $state,
+            $city,
+            $pin,
+            $emptyValue,
+            $rand,
+            $People,
+            $Nearest,
+            $People,
+            $Incident,
+            $date,
+            $Location
+        );
 
+        $stmt->execute();
+        $case_id = $conn->insert_id;
+        $stmt->close();
+
+        echo "<h2 style='color:green; text-align:center;'>
+                Complaint Registered Successfully!
+              </h2>";
+
+        echo "<h2 style='color:blue; text-align:center;'>
+                Your Case Number is: <b>" .
+                htmlspecialchars((string) $case_id, ENT_QUOTES, 'UTF-8') .
+                "</b>
+              </h2>";
+
+        echo "<h3 style='text-align:center;'>
+                Please save this Case Number to track your complaint.
+              </h3>";
+
+    } catch (mysqli_sql_exception $e) {
+        error_log('ECOPS crime complaint failed: ' . $e->getMessage());
+
+        http_response_code(500);
+        echo "Complaint registration failed. Please try again.";
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
+    register(
+        $conn,
+        trim($_POST['name'] ?? ''),
+        trim($_POST['occupation'] ?? ''),
+        trim($_POST['email'] ?? ''),
+        trim($_POST['age'] ?? ''),
+        trim($_POST['mobile'] ?? ''),
+        trim($_POST['aadharNo'] ?? ''),
+        trim($_POST['addr1'] ?? ''),
+        trim($_POST['country'] ?? ''),
+        trim($_POST['city'] ?? ''),
+        trim($_POST['state'] ?? ''),
+        trim($_POST['pin'] ?? ''),
+        trim($_POST['Incident'] ?? ''),
+        trim($_POST['Person'] ?? ''),
+        trim($_POST['People'] ?? ''),
+        trim($_POST['Location'] ?? ''),
+        trim($_POST['Date'] ?? ''),
+        trim($_POST['Nearest'] ?? '')
+    );
 } else {
-    echo "COMPLAINT REGISTRATION FAILED " . mysqli_error($conn);
-}
-
-}
-
-if(isset($_POST['submit'])){
-	register($conn, $_POST['name'], $_POST['occupation'], $_POST['email'], $_POST['age'], $_POST['mobile'], $_POST['aadharNo'], $_POST['addr1'], $_POST['country'], $_POST['city'], $_POST['state'], $_POST['pin'],$_POST['Incident'], $_POST['Person'], $_POST['People'], $_POST['Location'],$_POST['Date'], $_POST['Nearest']);
-	echo "ALL SET";
-}else{
-
-	echo "REGISTER CRIME HERE";
+    echo "REGISTER CRIME HERE";
 }
 ?>
 <!DOCTYPE html>

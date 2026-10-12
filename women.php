@@ -1,25 +1,86 @@
 <?php
-require 'connection.php';
+require_once __DIR__ . '/connection.php';
 
-function register($conn, $name, $occ, $email, $age, $mobile, $aadharNo, $addr1, $country, $city, $state, $pin, $Incident, $Person, $People, $Location, $Date, $Nearest, $type){
-	$rand=rand(0,3);
-	$date=date("Y-m-d");
-$qry = "INSERT INTO `registered_women`(`name`, `email`, `mobile`, `address1`, `country`, `occupation`, `age`, `aadharno`, `state`, `city`, `pin`, `Type`, `Accused`, `Police_station`, `People_involved`, `Incident`, `Date`, `Location`) VALUES ('$name','$email','$mobile','$addr1','$country','$occ','$age','$aadharNo','$state','$city','$pin','$type','$Person','$Nearest','$People','$Incident','$date','$Location')";
+function register(
+    $conn,
+    $name, $occ, $email, $age, $mobile, $aadharNo, $addr1,
+    $country, $city, $state, $pin, $Incident, $Person,
+    $People, $Location, $Date, $Nearest, $type
+) {
+    // Preserve the existing date behavior for this security update.
+    $date = date("Y-m-d");
 
-	$query=mysqli_query($conn, $qry);
-	if ($query) {
-		echo "COMPLAINT REGISTERED";
-	}else{
-		echo "COMPLAINT REGISTERATION FAILED".mysqli_error($conn);
-	}
+    $sql = "INSERT INTO `registered_women`
+            (`name`, `email`, `mobile`, `address1`, `country`,
+             `occupation`, `age`, `aadharno`, `state`, `city`,
+             `pin`, `Type`, `Accused`, `Police_station`,
+             `People_involved`, `Incident`, `Date`, `Location`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+    try {
+        $stmt = $conn->prepare($sql);
+
+        $stmt->bind_param(
+            "ssssssssssssssssss",
+            $name,
+            $email,
+            $mobile,
+            $addr1,
+            $country,
+            $occ,
+            $age,
+            $aadharNo,
+            $state,
+            $city,
+            $pin,
+            $type,
+            $Person,
+            $Nearest,
+            $People,
+            $Incident,
+            $date,
+            $Location
+        );
+
+        $stmt->execute();
+        $stmt->close();
+
+        echo "COMPLAINT REGISTERED";
+
+    } catch (mysqli_sql_exception $e) {
+        error_log('ECOPS women complaint failed: ' . $e->getMessage());
+
+        http_response_code(500);
+        echo "Complaint registration failed. Please try again.";
+    }
 }
 
-if(isset($_POST['submit'])){
-	register($conn, $_POST['name'], $_POST['occ'], $_POST['email'], $_POST['age'], $_POST['mobile'], $_POST['aadharNo'], $_POST['addr1'], $_POST['country'], $_POST['city'], $_POST['state'], $_POST['pin'],$_POST['Incident'], $_POST['Person'], $_POST['People'], $_POST['Location'],$_POST['Date'], $_POST['Nearest'], $_POST['type']);
-	echo "ALL SET";
-}else{
-	echo "REGISTER COMPLAINT HERE(WOMEN)";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
+    register(
+        $conn,
+        trim($_POST['name'] ?? ''),
+        trim($_POST['occ'] ?? ''),
+        trim($_POST['email'] ?? ''),
+        trim($_POST['age'] ?? ''),
+        trim($_POST['mobile'] ?? ''),
+        trim($_POST['aadharNo'] ?? ''),
+        trim($_POST['addr1'] ?? ''),
+        trim($_POST['country'] ?? ''),
+        trim($_POST['city'] ?? ''),
+        trim($_POST['state'] ?? ''),
+        trim($_POST['pin'] ?? ''),
+        trim($_POST['Incident'] ?? ''),
+        trim($_POST['Person'] ?? ''),
+        trim($_POST['People'] ?? ''),
+        trim($_POST['Location'] ?? ''),
+        trim($_POST['Date'] ?? ''),
+        trim($_POST['Nearest'] ?? ''),
+        trim($_POST['type'] ?? '')
+    );
+
+    echo "ALL SET";
+} else {
+    echo "REGISTER COMPLAINT HERE (WOMEN)";
 }
 ?>
 <!DOCTYPE html>
